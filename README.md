@@ -145,21 +145,26 @@ CameraPreview.hide();
 
 ### takePicture(options, successCallback, [errorCallback])
 
-<info>Take the picture. If width and height are not specified or are 0 it will use the defaults. If width and height are specified, it will choose a supported photo size that is closest to width and height specified and has closest aspect ratio to the preview. The argument `quality` defaults to `85` and specifies the quality/compression value: `0=max compression`, `100=max quality`.</info><br/>
+<info>Take the picture. If width and height are not specified or are 0 it will use the defaults. If width and height are specified, it will choose a supported photo size that is closest to width and height specified and has closest aspect ratio to the preview. The argument `quality` defaults to `85` and specifies the quality/compression value: `0=max compression`, `100=max quality`. Since application file paths can change on ios 8 & later, it is not recommended to store absolute file urls. For this reason, the plugin stores the taken picture in the app data directory and returns only the image name. More info on ios file structure: 
+[https://developer.apple.com/library/content/technotes/tn2406/_index.html](https://developer.apple.com/library/content/technotes/tn2406/_index.html)
+</info><br/>
 
 ```javascript
-CameraPreview.takePicture({width:640, height:640, quality: 85}, function(imagePath){
-  /*
-    imagePath is the path of the taken image file saved in your app internal directory.
+CameraPreview.takePicture({width:640, height:640, quality: 85}, function(imageName){
+  
+    //imageName contains only the name of the picture. To obtain the full path, use the data directory of cordova file plugin
+    var imagePath = cordova.file.dataDirectory + imageName;
+    /*
+    imagePath will normally be in these locations:
     On android: /data/data/com.your.app/files
-    On iOS: In ~/Documents
+    On iOS: In ~/Library/NoCloud
   */
 
 });
 
 // OR if you want to use the default options.
 
-CameraPreview.takePicture(function(imagePath){
+CameraPreview.takePicture(function(imageName){
   /* code here */
 });
 ```

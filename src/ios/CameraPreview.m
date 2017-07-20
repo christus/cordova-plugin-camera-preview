@@ -699,16 +699,16 @@
         CGImageRelease(finalImage); // release CGImageRef to remove memory leaks
         //write image to disk
         UIImage *image = [UIImage imageWithCGImage:resultFinalImage];
-        NSData *imageData = UIImageJPEGRepresentation(image, quality);
-        NSArray *paths = NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES);
-        NSString *documentsDirectory = [paths objectAtIndex:0];
-        NSString* uniqueFileName = [[NSUUID UUID] UUIDString];
-        NSString *dataPath = [documentsDirectory stringByAppendingPathComponent:[NSString stringWithFormat:@"%@.jpg",uniqueFileName]];
-        [imageData writeToFile:dataPath atomically:YES];
+        NSData *pictureData = UIImageJPEGRepresentation(image, quality);
+        NSArray *paths = NSSearchPathForDirectoriesInDomains(NSLibraryDirectory, NSUserDomainMask, YES);
+        NSString *libraryDirectory = [[paths objectAtIndex:0] stringByAppendingPathComponent:@"NoCloud"];
+        NSString* uniqueFileName = [NSString stringWithFormat:@"%@.jpg",[[NSUUID UUID] UUIDString]];
+        NSString *dataPath = [libraryDirectory stringByAppendingPathComponent:uniqueFileName];
+        [pictureData writeToFile:dataPath atomically:YES];
 
         CGImageRelease(resultFinalImage); // release CGImageRef to remove memory leaks
           
-        CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:dataPath];
+        CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:uniqueFileName];
         [pluginResult setKeepCallbackAsBool:true];
         [self.commandDelegate sendPluginResult:pluginResult callbackId:self.onPictureTakenHandlerId];
       }

@@ -402,7 +402,7 @@ public class CameraActivity extends Fragment {
 
             fileOutputStream.flush();
             fileOutputStream.close();
-            eventListener.onPictureTaken(file.getAbsolutePath());
+            eventListener.onPictureTaken(file.getName());
 
 
         } else {

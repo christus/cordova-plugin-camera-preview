@@ -690,8 +690,6 @@
           finalCImage = imageToFilter;
         }
 
-        NSMutableArray *params = [[NSMutableArray alloc] init];
-
         CGImageRef finalImage = [self.cameraRenderController.ciContext createCGImage:finalCImage fromRect:finalCImage.extent];
         UIImage *resultImage = [UIImage imageWithCGImage:finalImage];
 
@@ -699,14 +697,18 @@
         CGImageRef resultFinalImage = [self CGImageRotated:finalImage withRadians:radians];
 
         CGImageRelease(finalImage); // release CGImageRef to remove memory leaks
-
-        NSString *base64Image = [self getBase64Image:resultFinalImage withQuality:quality];
+        //write image to disk
+        UIImage *image = [UIImage imageWithCGImage:resultFinalImage];
+        NSData *imageData = UIImageJPEGRepresentation(image, quality);
+        NSArray *paths = NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES);
+        NSString *documentsDirectory = [paths objectAtIndex:0];
+        NSString* uniqueFileName = [[NSUUID UUID] UUIDString];
+        NSString *dataPath = [documentsDirectory stringByAppendingPathComponent:[NSString stringWithFormat:@"%@.jpg",uniqueFileName]];
+        [imageData writeToFile:dataPath atomically:YES];
 
         CGImageRelease(resultFinalImage); // release CGImageRef to remove memory leaks
-
-        [params addObject:base64Image];
-
-        CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsArray:params];
+          
+        CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:dataPath];
         [pluginResult setKeepCallbackAsBool:true];
         [self.commandDelegate sendPluginResult:pluginResult callbackId:self.onPictureTakenHandlerId];
       }

@@ -7,6 +7,7 @@ import android.content.Context;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.CompressFormat;
+import android.os.Environment;
 import android.util.Base64;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
@@ -37,6 +38,8 @@ import android.widget.RelativeLayout;
 import org.apache.cordova.LOG;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.lang.Exception;
 import java.lang.Integer;
@@ -386,9 +389,25 @@ public class CameraActivity extends Fragment {
           data = outputStream.toByteArray();
         }
 
-        String encodedImage = Base64.encodeToString(data, Base64.NO_WRAP);
+         //save the image to app internal storage: /data/data/com.app.bundleid/files/
+        Bitmap bitmap = BitmapFactory.decodeByteArray(data, 0, data.length);
 
-        eventListener.onPictureTaken(encodedImage);
+        if (bitmap != null) {
+
+            File file = new File(getActivity().getApplicationContext().getFilesDir().getPath(), System.currentTimeMillis() + ".jpg");
+            Log.d(TAG, "CameraPreview save image to " + file.getAbsolutePath());
+
+            FileOutputStream fileOutputStream = new FileOutputStream(file);
+            bitmap.compress(CompressFormat.JPEG, 100, fileOutputStream);
+
+            fileOutputStream.flush();
+            fileOutputStream.close();
+            eventListener.onPictureTaken(file.getAbsolutePath());
+
+
+        } else {
+            eventListener.onPictureTaken(null);
+        }                
         Log.d(TAG, "CameraPreview pictureTakenHandler called back");
       } catch (OutOfMemoryError e) {
         // most likely failed to allocate memory for rotateBitmap

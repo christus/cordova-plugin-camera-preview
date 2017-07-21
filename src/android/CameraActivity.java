@@ -397,7 +397,7 @@ public class CameraActivity extends Fragment {
         Log.d(TAG, "CameraPreview save image to " + file.getAbsolutePath());
 
         FileOutputStream fileOutputStream = new FileOutputStream(file);
-        FileOutputStream.write(data);
+        fileOutputStream.write(data);
         fileOutputStream.flush();
         fileOutputStream.close();
         eventListener.onPictureTaken(file.getName());

@@ -52,9 +52,13 @@ public class CameraActivity extends Fragment {
 
   public interface CameraPreviewListener {
     void onPictureTaken(String originalPicture);
+
     void onPictureTakenError(String message);
+
     void onFocusSet(int pointX, int pointY);
+
     void onFocusSetError(String message);
+
     void onCameraStarted();
   }
 
@@ -85,7 +89,7 @@ public class CameraActivity extends Fragment {
   public int x;
   public int y;
 
-  public void setEventListener(CameraPreviewListener listener){
+  public void setEventListener(CameraPreviewListener listener) {
     eventListener = listener;
   }
 
@@ -101,15 +105,15 @@ public class CameraActivity extends Fragment {
     return view;
   }
 
-  public void setRect(int x, int y, int width, int height){
+  public void setRect(int x, int y, int width, int height) {
     this.x = x;
     this.y = y;
     this.width = width;
     this.height = height;
   }
 
-  private void createCameraPreview(){
-    if(mPreview == null) {
+  private void createCameraPreview() {
+    if (mPreview == null) {
       setDefaultCameraId();
 
       //set box position and size
@@ -146,7 +150,7 @@ public class CameraActivity extends Fragment {
               boolean isSingleTapTouch = gestureDetector.onTouchEvent(event);
               if (event.getAction() != MotionEvent.ACTION_MOVE && isSingleTapTouch) {
                 if (tapToTakePicture && tapToFocus) {
-                  setFocusArea((int)event.getX(0), (int)event.getY(0), new Camera.AutoFocusCallback() {
+                  setFocusArea((int) event.getX(0), (int) event.getY(0), new Camera.AutoFocusCallback() {
                     public void onAutoFocus(boolean success, Camera camera) {
                       if (success) {
                         takePicture(0, 0, 85);
@@ -156,11 +160,11 @@ public class CameraActivity extends Fragment {
                     }
                   });
 
-                } else if(tapToTakePicture){
+                } else if (tapToTakePicture) {
                   takePicture(0, 0, 85);
 
-                } else if(tapToFocus){
-                  setFocusArea((int)event.getX(0), (int)event.getY(0), new Camera.AutoFocusCallback() {
+                } else if (tapToFocus) {
+                  setFocusArea((int) event.getX(0), (int) event.getY(0), new Camera.AutoFocusCallback() {
                     public void onAutoFocus(boolean success, Camera camera) {
                       if (success) {
                         // A callback to JS might make sense here.
@@ -178,13 +182,12 @@ public class CameraActivity extends Fragment {
 
                   switch (event.getAction()) {
                     case MotionEvent.ACTION_DOWN:
-                      if(mLastTouchX == 0 || mLastTouchY == 0) {
-                        mLastTouchX = (int)event.getRawX() - layoutParams.leftMargin;
-                        mLastTouchY = (int)event.getRawY() - layoutParams.topMargin;
-                      }
-                      else{
-                        mLastTouchX = (int)event.getRawX();
-                        mLastTouchY = (int)event.getRawY();
+                      if (mLastTouchX == 0 || mLastTouchY == 0) {
+                        mLastTouchX = (int) event.getRawX() - layoutParams.leftMargin;
+                        mLastTouchY = (int) event.getRawY() - layoutParams.topMargin;
+                      } else {
+                        mLastTouchX = (int) event.getRawX();
+                        mLastTouchY = (int) event.getRawY();
                       }
                       break;
                     case MotionEvent.ACTION_MOVE:
@@ -221,7 +224,7 @@ public class CameraActivity extends Fragment {
     }
   }
 
-  private void setDefaultCameraId(){
+  private void setDefaultCameraId() {
     // Find the total number of cameras available
     numberOfCameras = Camera.getNumberOfCameras();
 
@@ -250,7 +253,7 @@ public class CameraActivity extends Fragment {
 
     cameraCurrentlyLocked = defaultCameraId;
 
-    if(mPreview.mPreviewSize == null){
+    if (mPreview.mPreviewSize == null) {
       mPreview.setCamera(mCamera, cameraCurrentlyLocked);
       eventListener.onCameraStarted();
     } else {
@@ -302,7 +305,7 @@ public class CameraActivity extends Fragment {
     // check for availability of multiple cameras
     if (numberOfCameras == 1) {
       //There is only one camera available
-    }else{
+    } else {
       Log.d(TAG, "numberOfCameras: " + numberOfCameras);
 
       // OK, we have multiple cameras. Release this camera -> cameraCurrentlyLocked
@@ -357,7 +360,7 @@ public class CameraActivity extends Fragment {
     }
   }
 
-  public boolean hasFrontCamera(){
+  public boolean hasFrontCamera() {
     return getActivity().getApplicationContext().getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA_FRONT);
   }
 
@@ -368,19 +371,19 @@ public class CameraActivity extends Fragment {
     return Bitmap.createBitmap(source, 0, 0, source.getWidth(), source.getHeight(), matrix, true);
   }
 
-  ShutterCallback shutterCallback = new ShutterCallback(){
-    public void onShutter(){
+  ShutterCallback shutterCallback = new ShutterCallback() {
+    public void onShutter() {
       // do nothing, availabilty of this callback causes default system shutter sound to work
     }
   };
 
-  PictureCallback jpegPictureCallback = new PictureCallback(){
-    public void onPictureTaken(byte[] data, Camera arg1){
+  PictureCallback jpegPictureCallback = new PictureCallback() {
+    public void onPictureTaken(byte[] data, Camera arg1) {
       Log.d(TAG, "CameraPreview jpegPictureCallback");
 
       try {
 
-        if(cameraCurrentlyLocked == Camera.CameraInfo.CAMERA_FACING_FRONT) {
+        if (cameraCurrentlyLocked == Camera.CameraInfo.CAMERA_FACING_FRONT) {
           Bitmap bitmap = BitmapFactory.decodeByteArray(data, 0, data.length);
           bitmap = flipBitmap(bitmap);
 
@@ -389,25 +392,17 @@ public class CameraActivity extends Fragment {
           data = outputStream.toByteArray();
         }
 
-         //save the image to app internal storage: /data/data/com.app.bundleid/files/
-        Bitmap bitmap = BitmapFactory.decodeByteArray(data, 0, data.length);
+        //save the image to app internal storage: /data/data/com.app.bundleid/files/
+        File file = new File(getActivity().getApplicationContext().getFilesDir().getPath(), System.currentTimeMillis() + ".jpg");
+        Log.d(TAG, "CameraPreview save image to " + file.getAbsolutePath());
 
-        if (bitmap != null) {
-
-            File file = new File(getActivity().getApplicationContext().getFilesDir().getPath(), System.currentTimeMillis() + ".jpg");
-            Log.d(TAG, "CameraPreview save image to " + file.getAbsolutePath());
-
-            FileOutputStream fileOutputStream = new FileOutputStream(file);
-            bitmap.compress(CompressFormat.JPEG, 100, fileOutputStream);
-
-            fileOutputStream.flush();
-            fileOutputStream.close();
-            eventListener.onPictureTaken(file.getName());
+        FileOutputStream fileOutputStream = new FileOutputStream(file);
+        FileOutputStream.write(data);
+        fileOutputStream.flush();
+        fileOutputStream.close();
+        eventListener.onPictureTaken(file.getName());
 
 
-        } else {
-            eventListener.onPictureTaken(null);
-        }                
         Log.d(TAG, "CameraPreview pictureTakenHandler called back");
       } catch (OutOfMemoryError e) {
         // most likely failed to allocate memory for rotateBitmap
@@ -423,7 +418,7 @@ public class CameraActivity extends Fragment {
     }
   };
 
-  private Camera.Size getOptimalPictureSize(final int width, final int height, final Camera.Size previewSize, final List<Camera.Size> supportedSizes){
+  private Camera.Size getOptimalPictureSize(final int width, final int height, final Camera.Size previewSize, final List<Camera.Size> supportedSizes) {
     /*
       get the supportedPictureSize that:
       - matches exactly width and height
@@ -440,7 +435,7 @@ public class CameraActivity extends Fragment {
       size.height = temp;
     }
 
-    double previewAspectRatio  = (double)previewSize.width / (double)previewSize.height;
+    double previewAspectRatio = (double) previewSize.width / (double) previewSize.height;
 
     if (previewAspectRatio < 1.0) {
       // reset ratio to landscape
@@ -461,7 +456,7 @@ public class CameraActivity extends Fragment {
         return supportedSize;
       }
 
-      double difference = Math.abs(previewAspectRatio - ((double)supportedSize.width / (double)supportedSize.height));
+      double difference = Math.abs(previewAspectRatio - ((double) supportedSize.width / (double) supportedSize.height));
 
       if (difference < bestDifference - aspectTolerance) {
         // better aspectRatio found
@@ -491,11 +486,11 @@ public class CameraActivity extends Fragment {
     return size;
   }
 
-  public void takePicture(final int width, final int height, final int quality){
+  public void takePicture(final int width, final int height, final int quality) {
     Log.d(TAG, "CameraPreview takePicture width: " + width + ", height: " + height + ", quality: " + quality);
 
-    if(mPreview != null) {
-      if(!canTakePicture){
+    if (mPreview != null) {
+      if (!canTakePicture) {
         return;
       }
 
@@ -509,7 +504,7 @@ public class CameraActivity extends Fragment {
           params.setPictureSize(size.width, size.height);
           currentQuality = quality;
 
-          if(cameraCurrentlyLocked == Camera.CameraInfo.CAMERA_FACING_FRONT) {
+          if (cameraCurrentlyLocked == Camera.CameraInfo.CAMERA_FACING_FRONT) {
             // The image will be recompressed in the callback
             params.setJpegQuality(99);
           } else {
@@ -555,9 +550,9 @@ public class CameraActivity extends Fragment {
 
   private Rect calculateTapArea(float x, float y, float coefficient) {
     return new Rect(
-      Math.round((x - 100) * 2000 / width  - 1000),
+      Math.round((x - 100) * 2000 / width - 1000),
       Math.round((y - 100) * 2000 / height - 1000),
-      Math.round((x + 100) * 2000 / width  - 1000),
+      Math.round((x + 100) * 2000 / width - 1000),
       Math.round((y + 100) * 2000 / height - 1000)
     );
   }

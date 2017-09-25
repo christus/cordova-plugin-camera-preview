@@ -571,7 +571,7 @@
 - (double)radiansFromUIImageOrientation:(UIImageOrientation)orientation {
   double radians;
 
-  switch ([[UIApplication sharedApplication] statusBarOrientation]) {
+  switch (UIDevice.currentDevice.orientation) {
     case UIDeviceOrientationPortrait:
       radians = M_PI_2;
       break;
@@ -583,6 +583,9 @@
       break;
     case UIDeviceOrientationPortraitUpsideDown:
       radians = -M_PI_2;
+      break;
+     default:
+      radians = M_PI;
       break;
   }
 

@@ -5,8 +5,13 @@ import android.content.pm.ActivityInfo;
 import android.app.Fragment;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.CompressFormat;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
 import android.os.Environment;
 import android.util.Base64;
 import android.graphics.BitmapFactory;
@@ -31,6 +36,7 @@ import android.view.SurfaceView;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
+import android.view.WindowManager;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
@@ -48,7 +54,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Arrays;
 
-public class CameraActivity extends Fragment {
+public class CameraActivity extends Fragment implements SensorEventListener {
 
   public interface CameraPreviewListener {
     void onPictureTaken(String originalPicture);
@@ -88,12 +94,15 @@ public class CameraActivity extends Fragment {
   public int height;
   public int x;
   public int y;
+  private SensorManager	sensorManager;
 
   public void setEventListener(CameraPreviewListener listener) {
     eventListener = listener;
   }
 
   private String appResourcesPackage;
+  int rotationDegrees = 0;
+  int m_nOrientation = -1;
 
   @Override
   public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -102,7 +111,74 @@ public class CameraActivity extends Fragment {
     // Inflate the layout for this fragment
     view = inflater.inflate(getResources().getIdentifier("camera_activity", "layout", appResourcesPackage), container, false);
     createCameraPreview();
+
+    sensorManager = (SensorManager) this.getActivity().getSystemService(Context.SENSOR_SERVICE);
+    sensorManager.registerListener(this, sensorManager.getDefaultSensor(Sensor.TYPE_ORIENTATION), SensorManager.SENSOR_DELAY_UI);
+
     return view;
+  }
+  @Override
+  public void onAccuracyChanged(Sensor sensor, int accuracy){
+
+  }
+
+  @Override
+  public void onSensorChanged(SensorEvent event) {
+    if (event.sensor.getType() == Sensor.TYPE_ORIENTATION) {
+      //The coordinate-system is defined relative to the screen of the phone in its default orientation
+      int orientation = 0;
+      float roll = 0;
+      float pitch = 0;
+
+      switch (getActivity().getWindowManager().getDefaultDisplay().getRotation()) {
+        case Surface.ROTATION_0:
+          roll = event.values[2];
+          pitch = event.values[1];
+          break;
+        case Surface.ROTATION_90:
+          roll = event.values[1];
+          pitch = -event.values[2];
+          break;
+        case Surface.ROTATION_180:
+          roll = -event.values[2];
+          pitch = -event.values[1];
+          break;
+        case Surface.ROTATION_270:
+          roll = -event.values[1];
+          pitch = event.values[2];
+          break;
+      }
+
+      if (pitch >= -45 && pitch < 45 && roll >= 45)
+        orientation = 0;
+      else if (pitch < -45 && roll >= -45 && roll < 45)
+        orientation = 1;
+      else if (pitch >= -45 && pitch < 45 && roll < -45)
+        orientation = 2;
+      else if (pitch >= 45 && roll >= -45 && roll < 45)
+        orientation = 3;
+
+      if (m_nOrientation != orientation) { //orientation changed event
+
+        m_nOrientation = orientation;
+        // fire event for new notification, or update your interface here
+        if (orientation == 0) {
+          //landscape left
+          rotationDegrees = 270;
+        } else if (orientation == 1) {
+          //portrait
+          rotationDegrees = 0;
+        } else if (orientation == 2) {
+          //landscape right
+          rotationDegrees = 90;
+        } else {
+          //upside down
+          rotationDegrees = 180;
+        }
+
+        Log.d("Sensor", "onSensorChanged: orientation:" + orientation);
+      }
+    }
   }
 
   public void setRect(int x, int y, int width, int height) {
@@ -281,6 +357,10 @@ public class CameraActivity extends Fragment {
         }
       });
     }
+
+    if (sensorManager!= null)
+      sensorManager.registerListener(this, sensorManager.getDefaultSensor(Sensor.TYPE_ORIENTATION), SensorManager.SENSOR_DELAY_NORMAL);
+
   }
 
   @Override
@@ -295,6 +375,9 @@ public class CameraActivity extends Fragment {
       mCamera.release();
       mCamera = null;
     }
+
+    if (sensorManager != null)
+      sensorManager.unregisterListener(this);
   }
 
   public Camera getCamera() {
@@ -383,14 +466,19 @@ public class CameraActivity extends Fragment {
 
       try {
 
-        if (cameraCurrentlyLocked == Camera.CameraInfo.CAMERA_FACING_FRONT) {
+
           Bitmap bitmap = BitmapFactory.decodeByteArray(data, 0, data.length);
-          bitmap = flipBitmap(bitmap);
+          Matrix matrix = new Matrix();
+          if (cameraCurrentlyLocked == Camera.CameraInfo.CAMERA_FACING_FRONT)
+            matrix.preScale(1.0f, -1.0f);
+          matrix.preRotate(rotationDegrees);
+          bitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
 
           ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
           bitmap.compress(Bitmap.CompressFormat.JPEG, currentQuality, outputStream);
           data = outputStream.toByteArray();
-        }
+
+       // }
 
         //save the image to app internal storage: /data/data/com.app.bundleid/files/
         File file = new File(getActivity().getApplicationContext().getFilesDir().getPath(), System.currentTimeMillis() + ".jpg");

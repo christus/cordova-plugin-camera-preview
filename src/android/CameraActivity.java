@@ -13,7 +13,7 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Environment;
-import android.support.media.ExifInterface;
+import android.media.ExifInterface;
 import android.util.Base64;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;

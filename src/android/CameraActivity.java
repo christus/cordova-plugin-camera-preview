@@ -13,6 +13,7 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Environment;
+import android.support.media.ExifInterface;
 import android.util.Base64;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
@@ -43,8 +44,10 @@ import android.widget.RelativeLayout;
 
 import org.apache.cordova.LOG;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.lang.Exception;
@@ -454,6 +457,65 @@ public class CameraActivity extends Fragment implements SensorEventListener {
     return Bitmap.createBitmap(source, 0, 0, source.getWidth(), source.getHeight(), matrix, true);
   }
 
+  public void copyExifData(String file1, String file2){
+    try {
+      ExifInterface file1Exif = new ExifInterface(file1);
+      ExifInterface file2Exif = new ExifInterface(file2);
+
+      String dateTime = file1Exif.getAttribute(ExifInterface.TAG_DATETIME);
+      String exposureTime = file1Exif.getAttribute(ExifInterface.TAG_EXPOSURE_TIME);
+      String flash = file1Exif.getAttribute(ExifInterface.TAG_FLASH);
+      String focalLength = file1Exif.getAttribute(ExifInterface.TAG_FOCAL_LENGTH);
+      String gpsAltitude = file1Exif.getAttribute(ExifInterface.TAG_GPS_ALTITUDE);
+      String gpsAltitudeRef = file1Exif.getAttribute(ExifInterface.TAG_GPS_ALTITUDE_REF);
+      String gpsDateStamp = file1Exif.getAttribute(ExifInterface.TAG_GPS_DATESTAMP);
+      String gpsLatitude = file1Exif.getAttribute(ExifInterface.TAG_GPS_LATITUDE);
+      String gpsLatitudeRef = file1Exif.getAttribute(ExifInterface.TAG_GPS_LATITUDE_REF);
+      String gpsLongitude = file1Exif.getAttribute(ExifInterface.TAG_GPS_LONGITUDE);
+      String gpsLongitudeRef = file1Exif.getAttribute(ExifInterface.TAG_GPS_LONGITUDE_REF);
+      String gpsProcessingMethod = file1Exif.getAttribute(ExifInterface.TAG_GPS_PROCESSING_METHOD);
+      String gpsTimestamp = file1Exif.getAttribute(ExifInterface.TAG_GPS_TIMESTAMP);
+      Integer imageLength = file1Exif.getAttributeInt(ExifInterface.TAG_IMAGE_LENGTH, 0);
+      Integer imageWidth = file1Exif.getAttributeInt(ExifInterface.TAG_IMAGE_WIDTH, 0);
+      String make = file1Exif.getAttribute(ExifInterface.TAG_MAKE);
+      String model = file1Exif.getAttribute(ExifInterface.TAG_MODEL);
+      Integer orientation = file1Exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL);
+      Integer whiteBalance = file1Exif.getAttributeInt(ExifInterface.TAG_WHITE_BALANCE, 0);
+
+
+      file2Exif.setAttribute(ExifInterface.TAG_ORIENTATION, orientation.toString());
+      file2Exif.setAttribute(ExifInterface.TAG_DATETIME, dateTime);
+      file2Exif.setAttribute(ExifInterface.TAG_EXPOSURE_TIME, exposureTime);
+      file2Exif.setAttribute(ExifInterface.TAG_FLASH, flash);
+      file2Exif.setAttribute(ExifInterface.TAG_FOCAL_LENGTH, focalLength);
+      file2Exif.setAttribute(ExifInterface.TAG_GPS_ALTITUDE, gpsAltitude);
+      file2Exif.setAttribute(ExifInterface.TAG_GPS_ALTITUDE_REF, gpsAltitudeRef);
+      file2Exif.setAttribute(ExifInterface.TAG_GPS_DATESTAMP, gpsDateStamp);
+      file2Exif.setAttribute(ExifInterface.TAG_GPS_LATITUDE, gpsLatitude);
+      file2Exif.setAttribute(ExifInterface.TAG_GPS_LATITUDE_REF, gpsLatitudeRef);
+      file2Exif.setAttribute(ExifInterface.TAG_GPS_LONGITUDE, gpsLongitude);
+      file2Exif.setAttribute(ExifInterface.TAG_GPS_LONGITUDE_REF, gpsLongitudeRef);
+      file2Exif.setAttribute(ExifInterface.TAG_GPS_PROCESSING_METHOD, gpsProcessingMethod);
+      file2Exif.setAttribute(ExifInterface.TAG_GPS_TIMESTAMP, gpsTimestamp);
+      file2Exif.setAttribute(ExifInterface.TAG_IMAGE_LENGTH, imageLength.toString());
+      file2Exif.setAttribute(ExifInterface.TAG_IMAGE_WIDTH, imageWidth.toString());
+      file2Exif.setAttribute(ExifInterface.TAG_MAKE, make);
+      file2Exif.setAttribute(ExifInterface.TAG_MODEL, model);
+      file2Exif.setAttribute(ExifInterface.TAG_WHITE_BALANCE, whiteBalance.toString());
+      file2Exif.saveAttributes();
+    }
+    catch (FileNotFoundException io) {
+      io.printStackTrace();
+    }
+    catch (IOException io) {
+      io.printStackTrace();
+    }
+    catch (NullPointerException np){
+      np.printStackTrace();
+    }
+  }
+
+
   ShutterCallback shutterCallback = new ShutterCallback() {
     public void onShutter() {
       // do nothing, availabilty of this callback causes default system shutter sound to work
@@ -465,20 +527,23 @@ public class CameraActivity extends Fragment implements SensorEventListener {
       Log.d(TAG, "CameraPreview jpegPictureCallback");
 
       try {
+        File orignalFile = new File(getActivity().getApplicationContext().getFilesDir().getPath(), System.currentTimeMillis() + ".jpg");
+        FileOutputStream stream = new FileOutputStream(orignalFile);
+        stream.write(data);
+        stream.flush();
+        stream.close();
 
 
-          Bitmap bitmap = BitmapFactory.decodeByteArray(data, 0, data.length);
-          Matrix matrix = new Matrix();
-          if (cameraCurrentlyLocked == Camera.CameraInfo.CAMERA_FACING_FRONT)
-            matrix.preScale(1.0f, -1.0f);
-          matrix.preRotate(rotationDegrees);
-          bitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
+        Bitmap bitmap = BitmapFactory.decodeByteArray(data, 0, data.length);
+        Matrix matrix = new Matrix();
+        if (cameraCurrentlyLocked == Camera.CameraInfo.CAMERA_FACING_FRONT)
+          matrix.preScale(1.0f, -1.0f);
+        matrix.preRotate(rotationDegrees);
+        bitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
 
-          ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-          bitmap.compress(Bitmap.CompressFormat.JPEG, currentQuality, outputStream);
-          data = outputStream.toByteArray();
-
-       // }
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        bitmap.compress(Bitmap.CompressFormat.JPEG, currentQuality, outputStream);
+        data = outputStream.toByteArray();
 
         //save the image to app internal storage: /data/data/com.app.bundleid/files/
         File file = new File(getActivity().getApplicationContext().getFilesDir().getPath(), System.currentTimeMillis() + ".jpg");
@@ -488,6 +553,8 @@ public class CameraActivity extends Fragment implements SensorEventListener {
         fileOutputStream.write(data);
         fileOutputStream.flush();
         fileOutputStream.close();
+        copyExifData(orignalFile.getPath(), file.getPath());
+        orignalFile.delete();
         eventListener.onPictureTaken(file.getName());
 
 
@@ -638,10 +705,10 @@ public class CameraActivity extends Fragment implements SensorEventListener {
 
   private Rect calculateTapArea(float x, float y, float coefficient) {
     return new Rect(
-      Math.round((x - 100) * 2000 / width - 1000),
-      Math.round((y - 100) * 2000 / height - 1000),
-      Math.round((x + 100) * 2000 / width - 1000),
-      Math.round((y + 100) * 2000 / height - 1000)
+            Math.round((x - 100) * 2000 / width - 1000),
+            Math.round((y - 100) * 2000 / height - 1000),
+            Math.round((x + 100) * 2000 / width - 1000),
+            Math.round((y + 100) * 2000 / height - 1000)
     );
   }
 }

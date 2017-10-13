@@ -8,6 +8,7 @@ import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.CompressFormat;
+import android.graphics.RectF;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
@@ -50,6 +51,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.lang.Exception;
 import java.lang.Integer;
 import java.text.SimpleDateFormat;
@@ -462,6 +464,7 @@ public class CameraActivity extends Fragment implements SensorEventListener {
       ExifInterface file1Exif = new ExifInterface(file1);
       ExifInterface file2Exif = new ExifInterface(file2);
 
+      String aperture = file1Exif.getAttribute(ExifInterface.TAG_APERTURE);
       String dateTime = file1Exif.getAttribute(ExifInterface.TAG_DATETIME);
       String exposureTime = file1Exif.getAttribute(ExifInterface.TAG_EXPOSURE_TIME);
       String flash = file1Exif.getAttribute(ExifInterface.TAG_FLASH);
@@ -477,6 +480,7 @@ public class CameraActivity extends Fragment implements SensorEventListener {
       String gpsTimestamp = file1Exif.getAttribute(ExifInterface.TAG_GPS_TIMESTAMP);
       Integer imageLength = file1Exif.getAttributeInt(ExifInterface.TAG_IMAGE_LENGTH, 0);
       Integer imageWidth = file1Exif.getAttributeInt(ExifInterface.TAG_IMAGE_WIDTH, 0);
+      String iso = file1Exif.getAttribute(ExifInterface.TAG_ISO);
       String make = file1Exif.getAttribute(ExifInterface.TAG_MAKE);
       String model = file1Exif.getAttribute(ExifInterface.TAG_MODEL);
       Integer orientation = file1Exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL);
@@ -484,23 +488,44 @@ public class CameraActivity extends Fragment implements SensorEventListener {
 
 
       file2Exif.setAttribute(ExifInterface.TAG_ORIENTATION, orientation.toString());
-      file2Exif.setAttribute(ExifInterface.TAG_DATETIME, dateTime);
-      file2Exif.setAttribute(ExifInterface.TAG_EXPOSURE_TIME, exposureTime);
-      file2Exif.setAttribute(ExifInterface.TAG_FLASH, flash);
-      file2Exif.setAttribute(ExifInterface.TAG_FOCAL_LENGTH, focalLength);
-      file2Exif.setAttribute(ExifInterface.TAG_GPS_ALTITUDE, gpsAltitude);
-      file2Exif.setAttribute(ExifInterface.TAG_GPS_ALTITUDE_REF, gpsAltitudeRef);
-      file2Exif.setAttribute(ExifInterface.TAG_GPS_DATESTAMP, gpsDateStamp);
-      file2Exif.setAttribute(ExifInterface.TAG_GPS_LATITUDE, gpsLatitude);
-      file2Exif.setAttribute(ExifInterface.TAG_GPS_LATITUDE_REF, gpsLatitudeRef);
-      file2Exif.setAttribute(ExifInterface.TAG_GPS_LONGITUDE, gpsLongitude);
-      file2Exif.setAttribute(ExifInterface.TAG_GPS_LONGITUDE_REF, gpsLongitudeRef);
-      file2Exif.setAttribute(ExifInterface.TAG_GPS_PROCESSING_METHOD, gpsProcessingMethod);
-      file2Exif.setAttribute(ExifInterface.TAG_GPS_TIMESTAMP, gpsTimestamp);
+      if (aperture != null)
+        file2Exif.setAttribute(ExifInterface.TAG_APERTURE, aperture);
+      if (dateTime != null)
+        file2Exif.setAttribute(ExifInterface.TAG_DATETIME, dateTime);
+      if (exposureTime != null)
+        file2Exif.setAttribute(ExifInterface.TAG_EXPOSURE_TIME, exposureTime);
+      if (flash != null)
+        file2Exif.setAttribute(ExifInterface.TAG_FLASH, flash);
+      if (focalLength != null)
+        file2Exif.setAttribute(ExifInterface.TAG_FOCAL_LENGTH, focalLength);
+      if (gpsAltitude != null)
+        file2Exif.setAttribute(ExifInterface.TAG_GPS_ALTITUDE, gpsAltitude);
+      if (gpsAltitudeRef != null)
+        file2Exif.setAttribute(ExifInterface.TAG_GPS_ALTITUDE_REF, gpsAltitudeRef);
+      if (gpsDateStamp != null)
+        file2Exif.setAttribute(ExifInterface.TAG_GPS_DATESTAMP, gpsDateStamp);
+      if (gpsLatitude != null)
+        file2Exif.setAttribute(ExifInterface.TAG_GPS_LATITUDE, gpsLatitude);
+      if (gpsLatitudeRef != null)
+        file2Exif.setAttribute(ExifInterface.TAG_GPS_LATITUDE_REF, gpsLatitudeRef);
+      if (gpsLongitude != null)
+        file2Exif.setAttribute(ExifInterface.TAG_GPS_LONGITUDE, gpsLongitude);
+      if (gpsLongitudeRef != null)
+        file2Exif.setAttribute(ExifInterface.TAG_GPS_LONGITUDE_REF, gpsLongitudeRef);
+      if (gpsProcessingMethod != null)
+        file2Exif.setAttribute(ExifInterface.TAG_GPS_PROCESSING_METHOD, gpsProcessingMethod);
+      if (gpsTimestamp != null)
+        file2Exif.setAttribute(ExifInterface.TAG_GPS_TIMESTAMP, gpsTimestamp);
+
       file2Exif.setAttribute(ExifInterface.TAG_IMAGE_LENGTH, imageLength.toString());
       file2Exif.setAttribute(ExifInterface.TAG_IMAGE_WIDTH, imageWidth.toString());
-      file2Exif.setAttribute(ExifInterface.TAG_MAKE, make);
-      file2Exif.setAttribute(ExifInterface.TAG_MODEL, model);
+      if (iso != null)
+        file2Exif.setAttribute(ExifInterface.TAG_ISO, iso);
+      if (make != null)
+        file2Exif.setAttribute(ExifInterface.TAG_MAKE, make);
+      if (model != null)
+        file2Exif.setAttribute(ExifInterface.TAG_MODEL, model);
+
       file2Exif.setAttribute(ExifInterface.TAG_WHITE_BALANCE, whiteBalance.toString());
       file2Exif.saveAttributes();
     }
@@ -512,6 +537,30 @@ public class CameraActivity extends Fragment implements SensorEventListener {
     }
     catch (NullPointerException np){
       np.printStackTrace();
+    }
+  }
+
+  private void saveThumbnail(Bitmap b, String name) {
+    try {
+      Matrix m = new Matrix();
+      m.setRectToRect(new RectF(0, 0, b.getWidth(), b.getHeight()), new RectF(0, 0, 370, 370), Matrix.ScaleToFit.CENTER);
+      Bitmap resized = Bitmap.createBitmap(b, 0, 0, b.getWidth(), b.getHeight(), m, true);
+      String fileName = "thumb_" + name;
+      int index = fileName.lastIndexOf('.');
+      String ext = fileName.substring(index);
+      File file = new File(getActivity().getApplicationContext().getFilesDir().getPath(), fileName);
+      OutputStream outStream = new FileOutputStream(file);
+
+      if (ext.compareToIgnoreCase(".png") == 0) {
+        resized.compress(Bitmap.CompressFormat.PNG, 100, outStream);
+      } else {
+        resized.compress(Bitmap.CompressFormat.JPEG, 100, outStream);
+      }
+
+      outStream.flush();
+      outStream.close();
+    } catch (IOException e) {
+      e.printStackTrace();
     }
   }
 
@@ -555,6 +604,8 @@ public class CameraActivity extends Fragment implements SensorEventListener {
         fileOutputStream.close();
         copyExifData(orignalFile.getPath(), file.getPath());
         orignalFile.delete();
+
+        saveThumbnail(bitmap, file.getName());
         eventListener.onPictureTaken(file.getName());
 
 

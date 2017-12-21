@@ -570,24 +570,30 @@
 
 - (double)radiansFromUIImageOrientation:(UIImageOrientation)orientation {
   double radians;
-
-  switch (UIDevice.currentDevice.orientation) {
-    case UIDeviceOrientationPortrait:
-      radians = M_PI_2;
-      break;
-    case UIDeviceOrientationLandscapeLeft:
-      radians = 0.f;
-      break;
-    case UIDeviceOrientationLandscapeRight:
-      radians = M_PI;
-      break;
-    case UIDeviceOrientationPortraitUpsideDown:
-      radians = -M_PI_2;
-      break;
-     default:
-      radians = M_PI;
-      break;
-  }
+    
+    switch (UIDevice.currentDevice.orientation) {
+        case UIDeviceOrientationPortrait:
+            radians = M_PI_2;
+            break;
+        case UIDeviceOrientationFaceUp:
+            radians = M_PI_2;
+            break;
+        case UIDeviceOrientationFaceDown:
+            radians = M_PI_2;
+            break;
+        case UIDeviceOrientationLandscapeLeft:
+            radians = 0.f;
+            break;
+        case UIDeviceOrientationLandscapeRight:
+            radians = M_PI;
+            break;
+        case UIDeviceOrientationPortraitUpsideDown:
+            radians = -M_PI_2;
+            break;
+        default:
+            radians = M_PI;
+            break;
+    }
 
   return radians;
 }

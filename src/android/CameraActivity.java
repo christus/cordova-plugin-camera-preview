@@ -28,6 +28,7 @@ import android.hardware.Camera.ShutterCallback;
 import android.os.Bundle;
 import android.util.Log;
 import android.util.DisplayMetrics;
+import android.view.Display;
 import android.view.GestureDetector;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -182,6 +183,7 @@ public class CameraActivity extends Fragment implements SensorEventListener {
         }
 
         Log.d("Sensor", "onSensorChanged: orientation:" + orientation);
+        setCameraDisplayOrientation(getActivity(), defaultCameraId, mCamera);
       }
     }
   }
@@ -587,7 +589,29 @@ public class CameraActivity extends Fragment implements SensorEventListener {
         Matrix matrix = new Matrix();
         if (cameraCurrentlyLocked == Camera.CameraInfo.CAMERA_FACING_FRONT)
           matrix.preScale(1.0f, -1.0f);
-        matrix.preRotate(rotationDegrees);
+
+        int angle;
+        Display display = getActivity().getWindowManager().getDefaultDisplay();
+        switch (display.getRotation()) {
+          case Surface.ROTATION_0: // This is display orientation
+            angle = 90; // This is camera orientation
+            break;
+          case Surface.ROTATION_90:
+            angle = 0;
+            break;
+          case Surface.ROTATION_180:
+            angle = 270;
+            break;
+          case Surface.ROTATION_270:
+            angle = 180;
+            break;
+          default:
+            angle = 90;
+            break;
+        }
+        Log.d(TAG, "angle: " + angle);
+        matrix.preRotate(angle);
+
         bitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
 
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
@@ -726,6 +750,31 @@ public class CameraActivity extends Fragment implements SensorEventListener {
     } else {
       canTakePicture = true;
     }
+  }
+
+  public static void setCameraDisplayOrientation(Activity activity,
+                                                 int cameraId, android.hardware.Camera camera) {
+    android.hardware.Camera.CameraInfo info =
+            new android.hardware.Camera.CameraInfo();
+    android.hardware.Camera.getCameraInfo(cameraId, info);
+    int rotation = activity.getWindowManager().getDefaultDisplay()
+            .getRotation();
+    int degrees = 0;
+    switch (rotation) {
+      case Surface.ROTATION_0: degrees = 0; break;
+      case Surface.ROTATION_90: degrees = 90; break;
+      case Surface.ROTATION_180: degrees = 180; break;
+      case Surface.ROTATION_270: degrees = 270; break;
+    }
+
+    int result;
+    if (info.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) {
+      result = (info.orientation + degrees) % 360;
+      result = (360 - result) % 360;  // compensate the mirror
+    } else {  // back-facing
+      result = (info.orientation - degrees + 360) % 360;
+    }
+    camera.setDisplayOrientation(result);
   }
 
   public void setFocusArea(final int pointX, final int pointY, final Camera.AutoFocusCallback callback) {

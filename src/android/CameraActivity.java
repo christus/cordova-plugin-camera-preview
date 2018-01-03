@@ -774,7 +774,8 @@ public class CameraActivity extends Fragment implements SensorEventListener {
     } else {  // back-facing
       result = (info.orientation - degrees + 360) % 360;
     }
-    camera.setDisplayOrientation(result);
+    if (camera!=null)
+      camera.setDisplayOrientation(result);
   }
 
   public void setFocusArea(final int pointX, final int pointY, final Camera.AutoFocusCallback callback) {

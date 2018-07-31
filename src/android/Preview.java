@@ -82,40 +82,44 @@ class Preview extends RelativeLayout implements SurfaceHolder.Callback {
     }
   }
   private void setCameraDisplayOrientation() {
-    Camera.CameraInfo info = new Camera.CameraInfo();
-    int rotation = ((Activity) getContext()).getWindowManager().getDefaultDisplay().getRotation();
-    int degrees = 0;
-    DisplayMetrics dm = new DisplayMetrics();
+    try {
+        Camera.CameraInfo info = new Camera.CameraInfo();
+        int rotation = ((Activity) getContext()).getWindowManager().getDefaultDisplay().getRotation();
+        int degrees = 0;
+        DisplayMetrics dm = new DisplayMetrics();
 
-    Camera.getCameraInfo(cameraId, info);
-    ((Activity) getContext()).getWindowManager().getDefaultDisplay().getMetrics(dm);
+        Camera.getCameraInfo(cameraId, info);
+        ((Activity) getContext()).getWindowManager().getDefaultDisplay().getMetrics(dm);
 
-    switch (rotation) {
-      case Surface.ROTATION_0:
-        degrees = 0;
-        break;
-      case Surface.ROTATION_90:
-        degrees = 90;
-        break;
-      case Surface.ROTATION_180:
-        degrees = 180;
-        break;
-      case Surface.ROTATION_270:
-        degrees = 270;
-        break;
+        switch (rotation) {
+          case Surface.ROTATION_0:
+            degrees = 0;
+            break;
+          case Surface.ROTATION_90:
+            degrees = 90;
+            break;
+          case Surface.ROTATION_180:
+            degrees = 180;
+            break;
+          case Surface.ROTATION_270:
+            degrees = 270;
+            break;
+        }
+
+        if (info.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) {
+          displayOrientation = (info.orientation + degrees) % 360;
+          displayOrientation = (360 - displayOrientation) % 360;
+        } else {
+          displayOrientation = (info.orientation - degrees + 360) % 360;
+        }
+
+        Log.d(TAG, "screen is rotated " + degrees + "deg from natural");
+        Log.d(TAG, (info.facing == Camera.CameraInfo.CAMERA_FACING_FRONT ? "front" : "back") + " camera is oriented -" + info.orientation + "deg from natural");
+        Log.d(TAG, "need to rotate preview " + displayOrientation + "deg");
+
+        mCamera.setDisplayOrientation(displayOrientation);
+    } catch (Exception e) {
     }
-
-    if (info.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) {
-      displayOrientation = (info.orientation + degrees) % 360;
-      displayOrientation = (360 - displayOrientation) % 360;
-    } else {
-      displayOrientation = (info.orientation - degrees + 360) % 360;
-    }
-
-    Log.d(TAG, "screen is rotated " + degrees + "deg from natural");
-    Log.d(TAG, (info.facing == Camera.CameraInfo.CAMERA_FACING_FRONT ? "front" : "back") + " camera is oriented -" + info.orientation + "deg from natural");
-    Log.d(TAG, "need to rotate preview " + displayOrientation + "deg");
-    mCamera.setDisplayOrientation(displayOrientation);
   }
 
   public void switchCamera(Camera camera, int cameraId) {

@@ -477,7 +477,7 @@ public class CameraActivity extends Fragment {
                 stream.flush();
                 stream.close();
                 copyExifData(exifInterface, new ExifInterface(orignalFile.getAbsolutePath()));
-                saveThumbnail(bitmap, orignalFile.getName());
+                
 
                 eventListener.onPictureTaken(orignalFile.getName());
                 Log.d(TAG, "CameraPreview pictureTakenHandler called back");
@@ -651,29 +651,7 @@ public class CameraActivity extends Fragment {
         );
     }
 
-    private void saveThumbnail(Bitmap b, String name) {
-        try {
-            Matrix m = new Matrix();
-            m.setRectToRect(new RectF(0, 0, b.getWidth(), b.getHeight()), new RectF(0, 0, 370, 370), Matrix.ScaleToFit.CENTER);
-            Bitmap resized = Bitmap.createBitmap(b, 0, 0, b.getWidth(), b.getHeight(), m, true);
-            String fileName = "thumb_" + name;
-            int index = fileName.lastIndexOf('.');
-            String ext = fileName.substring(index);
-            File file = new File(getActivity().getApplicationContext().getFilesDir().getPath(), fileName);
-            OutputStream outStream = new FileOutputStream(file);
-
-            if (ext.compareToIgnoreCase(".png") == 0) {
-                resized.compress(Bitmap.CompressFormat.PNG, 100, outStream);
-            } else {
-                resized.compress(Bitmap.CompressFormat.JPEG, 100, outStream);
-            }
-
-            outStream.flush();
-            outStream.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
+   
 
     public void copyExifData(ExifInterface file1Exif, ExifInterface file2Exif) {
         try {
